@@ -8,6 +8,7 @@ from code_felix.utils_.util_log import *
 
 class Cache_File:
     def __init__(self):
+        self.df_key = 'df'
         self.cache_path='./cache/'
         self.enable=True
         self.date_list = ['start','close','start_base','weekbegin', 'tol_day_cnt_min',	'tol_day_cnt_max']
@@ -21,22 +22,18 @@ class Cache_File:
         if self.enable:
             path = self.get_path(key, file_type)
             if os.path.exists(path):
-                logger.debug(f"try to read cache from file:{path}, type:{file_type}")
 
-                #check if the file have the data type column
-                if file_type== 'pkl':
-                    df = pd.read_pickle(path)
-                    logger.debug(f"Load to {type(df)} with density:{df.density} for {file_type}@{path}")
-                    df.fillna(0,inplace=True)
-                elif file_type == 'h5':
-                    df = pd.read_hdf(path, 'key')
-                else:
-                    df = pd.read_csv(path, nrows=1)
-                    tmp_data_list = [item for item in self.date_list if item in df.columns]
+                if file_type == 'h5':
+                    with pd.HDFStore(path) as store:
+                        key_list = store.keys()
+                    logger.debug(f"try to read cache from file:{path}, type:{file_type}, key:{key_list}")
+                    if len(key_list) == 0:
+                        return None
+                    elif len(key_list) == 1 :
+                        return pd.read_hdf(path, key_list[0])
+                    else:
+                        return tuple([ pd.read_hdf(path, key) for key in key_list])
 
-                    df =pd.read_csv(path, parse_dates = tmp_data_list)
-                logger.debug(f"Return {len(df) } resut from file cache:{path}")
-                return df
             else:
                 logger.debug(f"Can not find cache from file:{path}")
                 return None
@@ -44,32 +41,30 @@ class Cache_File:
             logger.debug( "disable cache")
 
 
-    def writeFile(self, key, val, type):
+    def writeFile(self, key, val, file_type):
         if not self.enable :
             logger.debug('Cache is disable')
             return None
-        if isinstance(val, pd.DataFrame ) and len(val)>0:
-            path = self.get_path(key, type)
-            logger.debug( f"====Write {len(val)} records to File#{path}" )
-            if type == 'pkl':
-                sparse = val.to_sparse(fill_value=0)
-                logger.debug(f'The original sparse.density is {sparse.density}')
-                if sparse.density > 0.1:
-                    sparse = sparse.to_dense().to_sparse(fill_value=0)
-                    logger.debug(f'The new sparse.density is convert to {sparse.density}')
 
-                sparse.to_pickle(path)
-                logger.debug(f'The sparse.density is {sparse.density}')
-            elif type == 'h5':
-                val.to_hdf(path, 'key')
-            else:
-                if isinstance(val, pd.SparseDataFrame):
-                    val = val.to_dense()
-                val.to_csv(path, index=False, )
+        if val is None or len(val)==0:
+            logger.debug('Return value is None or empty')
+            return val
+        elif isinstance(val, tuple):
+            val_tuple = val
+        else:
+            val_tuple = (val,)
+
+        if all([ isinstance(item, (pd.DataFrame, pd.Series)) for item in val_tuple]) :
+            path = self.get_path(key, file_type)
+            if file_type == 'h5':
+                for index, df in enumerate(val_tuple):
+                    key = f'{self.df_key}_{index}'
+                    logger.debug(f"====Write {len(df)} records to File#{path}, with:{key}")
+                    df.to_hdf(path, key)
             return val
         else:
-            logger.warning('The return is not DataFrame or it is None')
-            return None
+            logger.warning(f'The return is not DataFrame or it is None:{[ isinstance(item, pd.DataFrame) for item in val_tuple]}')
+            return val
 
 cache =  Cache_File()
 
@@ -126,7 +121,19 @@ if __name__ == '__main__':
         time.sleep(3)
         return pd.DataFrame(data= np.arange(0,10).reshape(2,5))
 
+
+    @timed()
+    @file_cache()
+    def test_cache_2(name):
+        import time
+        import numpy  as np
+        time.sleep(3)
+        df = pd.DataFrame(data= np.arange(0,10).reshape(2,5))
+        return (df, df)
+
+
     print(test_cache('Felix'))
+    print(test_cache_2('Felix'))
     #print(test_cache('Felix'))
 
 
