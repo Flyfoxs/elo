@@ -24,7 +24,7 @@ class Cache_File:
             if os.path.exists(path):
 
                 if file_type == 'h5':
-                    with pd.HDFStore(path) as store:
+                    with pd.HDFStore(path, mode='r') as store:
                         key_list = store.keys()
                     logger.debug(f"try to read cache from file:{path}, type:{file_type}, key:{key_list}")
                     if len(key_list) == 0:
