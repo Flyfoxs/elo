@@ -14,8 +14,18 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
+def get_params_summary(params):
+    key_list = ['num_leaves', 'max_depth', 'lambda_l1']
+
+    params = [ f'{key}_{params[key]}'  for key in key_list if key in params]
+
+    return '|'.join(params)
+
+
+
 @timed()
 def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_importance=False):
+    des = get_params_summary(params)
     oof = np.zeros(len(X))
     prediction = np.zeros(len(X_test))
     scores = []
@@ -54,10 +64,6 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
             print(model.alpha_)
 
             y_pred_valid = model.predict(X_valid)
-            score = mean_squared_error(y_valid, y_pred_valid) ** 0.5
-            print(f'Fold {fold_n}. RMSE: {score:.4f}.')
-            print('')
-
             y_pred = model.predict(X_test)
 
         if model_type == 'cat':
@@ -69,7 +75,10 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
             y_pred = model.predict(X_test)
 
         oof[valid_index] = y_pred_valid.reshape(-1, )
-        scores.append(mean_squared_error(y_valid, y_pred_valid) ** 0.5)
+        score = mean_squared_error(y_valid, y_pred_valid) ** 0.5
+        scores.append(score)
+
+        logger.debug('Folder:{}, des:{}, score:{}'.format(fold_n, des, score) )
 
         prediction += y_pred
 
@@ -83,7 +92,9 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
 
     prediction /= n_fold
 
-    print('CV mean score: {0:.4f}, std: {1:.4f}.'.format(np.mean(scores), np.std(scores)))
+    logger.debug('CV mean score: {0:.4f}, std: {1:.4f}. score list:{2}'.format(np.mean(scores), np.std(scores), scores))
+
+    des = '{0:.4f}_{1}_{2}'.format(np.mean(scores), model_type, des )
 
     if model_type == 'lgb':
         feature_importance["importance"] /= n_fold
@@ -98,7 +109,12 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
             plt.title('LGB Features (avg over folds)');
 
             return oof, prediction, feature_importance
-        return oof, prediction, np.mean(scores)
+        return oof, prediction, des
 
     else:
-        return oof, prediction, np.mean(scores)
+        return oof, prediction, des
+
+
+if __name__ == '__main__':
+    from code_felix.core.train import param
+    print(get_params_summary(param))

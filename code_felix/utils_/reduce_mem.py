@@ -28,8 +28,12 @@ def reduce_mem():
 
 
 def _reduce_mem_usage(df, verbose=True):
+    if isinstance(df, pd.Series):
+        return df
     numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
-    start_mem = df.memory_usage().sum() / 1024**2
+    mem = df.memory_usage()
+    mem = mem if isinstance(mem, (int, float)) else mem.sum()
+    start_mem = mem / 1024**2
     for col in df.columns:
         col_type = df[col].dtypes
         if col_type in numerics:
@@ -51,7 +55,9 @@ def _reduce_mem_usage(df, verbose=True):
                     df[col] = df[col].astype(np.float32)
                 else:
                     df[col] = df[col].astype(np.float64)
-    end_mem = df.memory_usage().sum() / 1024**2
+    mem = df.memory_usage()
+    mem = mem if isinstance(mem, (int, float)) else mem.sum()
+    end_mem = mem / 1024**2
     if verbose:
         logger.debug('Mem. usage decreased from {:7.2f} to {:7.2f} Mb ({:.1f}% reduction)'.format(start_mem, end_mem, 100 * (start_mem - end_mem) / start_mem))
     return df
