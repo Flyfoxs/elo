@@ -1,6 +1,8 @@
 from code_felix.feature.read_file import *
 from code_felix.core.sk_model import *
 
+from hyperopt import fmin, tpe, hp,space_eval,rand,Trials,partial,STATUS_OK
+
 @timed()
 def optimize_fun(args):
     args_input = locals()
@@ -31,7 +33,7 @@ def optimize_fun(args):
     model_type = 'lgb'
     oof, prediction, score = train_model(train, test, label, params=params, model_type=model_type,
                                          plot_feature_importance=False)
-    logger.debug(f'Get {score} base on {args_input}')
+    logger.debug(f'Search: get {score} base on {args_input}')
 
     return {
         'loss': score,
@@ -44,9 +46,15 @@ def optimize_fun(args):
         }
 
 
-from hyperopt import fmin, tpe, hp,space_eval,rand,Trials,partial,STATUS_OK
 
 if __name__ == '__main__':
+    import sys
+
+    if len(sys.argv) > 1:
+        max_evals = int(sys.argv[1])
+    else:
+        max_evals = 2
+
     space = {"max_depth":      hp.choice("max_depth", range(4,10)),
              'reg_alpha':  hp.choice("reg_alpha", np.arange(0.1, 2, 0.1)),
              'reg_lambda': hp.choice("reg_lambda", np.arange(0, 10, 1)),
@@ -56,12 +64,12 @@ if __name__ == '__main__':
              #"threshold": hp.randint("threshold", 400),
              }
 
-trials = Trials()
-best = fmin(optimize_fun, space, algo=tpe.suggest, max_evals=60, trials=trials)
+    trials = Trials()
+    best = fmin(optimize_fun, space, algo=tpe.suggest, max_evals=max_evals, trials=trials)
 
-att_message = [trials.trial_attachments(trial)['message'] for trial in trials.trials]
-for score, para, misc in zip( trials.losses() ,
-                              att_message,
-                              [item.get('misc').get('vals') for item in trials.trials]
-                              ):
-    logger.debug(f'score:{"%9.6f"%score}, para:{para}, misc:{misc}')
+    att_message = [trials.trial_attachments(trial)['message'] for trial in trials.trials]
+    for score, para, misc in zip( trials.losses() ,
+                                  att_message,
+                                  [item.get('misc').get('vals') for item in trials.trials]
+                                  ):
+        logger.debug(f'score:{"%9.6f"%score}, para:{para}, misc:{misc}')
