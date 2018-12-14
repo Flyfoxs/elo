@@ -25,7 +25,7 @@ def get_params_summary(params):
 
 @timed()
 def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_importance=False):
-    des = get_params_summary(params)
+
     oof = np.zeros(len(X))
     prediction = np.zeros(len(X_test))
     scores = []
@@ -35,7 +35,7 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
     folds = KFold(n_splits=n_fold, shuffle=True, random_state=777)
 
     for fold_n, (train_index, valid_index) in enumerate(folds.split(X)):
-        print('Fold', fold_n, 'started at', time.ctime())
+        logger.debug(f'Fold:{fold_n}, started at:{time.ctime()}')
         X_train, X_valid = X.iloc[train_index], X.iloc[valid_index]
         y_train, y_valid = y.iloc[train_index], y.iloc[valid_index]
 
@@ -43,7 +43,7 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
             model = lgb.LGBMRegressor(**params, n_estimators=20000, nthread=4, n_jobs=-1)
             model.fit(X_train, y_train,
                       eval_set=[(X_train, y_train), (X_valid, y_valid)], eval_metric='rmse',
-                      verbose=1000, early_stopping_rounds=200)
+                      verbose=True, early_stopping_rounds=200)
 
             y_pred_valid = model.predict(X_valid)
             y_pred = model.predict(X_test, num_iteration=model.best_iteration_)
@@ -61,7 +61,7 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
         if model_type == 'rcv':
             model = RidgeCV(alphas=(0.1, 1.0, 10.0, 100.0), scoring='neg_mean_squared_error', cv=3)
             model.fit(X_train, y_train)
-            print(model.alpha_)
+            logger.debug(model.alpha_)
 
             y_pred_valid = model.predict(X_valid)
             y_pred = model.predict(X_test)
@@ -78,7 +78,7 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
         score = mean_squared_error(y_valid, y_pred_valid) ** 0.5
         scores.append(score)
 
-        logger.debug('Folder:{}, des:{}, score:{}'.format(fold_n, des, score) )
+        logger.debug('Folder:{}, score:{}'.format(fold_n, score) )
 
         prediction += y_pred
 
@@ -94,7 +94,6 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
 
     logger.debug('CV mean score: {0:.4f}, std: {1:.4f}. score list:{2}'.format(np.mean(scores), np.std(scores), scores))
 
-    des = '{0:.4f}_{1}_{2}'.format(np.mean(scores), model_type, des )
 
     if model_type == 'lgb':
         feature_importance["importance"] /= n_fold
@@ -109,12 +108,12 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
             plt.title('LGB Features (avg over folds)');
 
             return oof, prediction, feature_importance
-        return oof, prediction, des
+        return oof, prediction, np.mean(scores)
 
     else:
-        return oof, prediction, des
+        return oof, prediction, np.mean(scores)
 
 
 if __name__ == '__main__':
     from code_felix.core.train import param
-    print(get_params_summary(param))
+    logger.debug(get_params_summary(param))

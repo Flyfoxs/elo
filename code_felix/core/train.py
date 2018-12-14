@@ -32,7 +32,8 @@ params = {'num_leaves': 111,
          "bagging_fraction": 0.7083 ,
          "bagging_seed": 11,
          "metric": 'rmse',
-         "lambda_l1": 0.2634,
+         "reg_alpha": 0.2634,
+         #"reg_lambda":
          "random_state": 133,
          "verbosity": -1,
          "verbose":-1, #No further splits with positive gain
@@ -41,8 +42,12 @@ params = {'num_leaves': 111,
 
 if __name__ == '__main__':
     train, label, test = get_feature_target()
-    logger.debug(train.shape, label.shape, test.shape)
-    oof, prediction, des = train_model(train, test, label, params=params,  model_type='lgb', plot_feature_importance=False)
+    logger.debug(f'{train.shape}, {label.shape}, {test.shape}')
+
+    model_type = 'lgb'
+    oof, prediction, score = train_model(train, test, label, params=params,  model_type=model_type, plot_feature_importance=False)
+
+    des = '{0:.4f}_{1}_{2}'.format( score, model_type, get_params_summary(params) )
 
     sub_df = pd.DataFrame({"card_id":test.index})
     sub_df["target"] = prediction
