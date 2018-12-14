@@ -21,5 +21,9 @@ params = {'num_leaves': 54,
          'reg_lambda': 0.3603427518866501,
          'subsample': 0.8767547959893627,}
 
-train_model(train, test, label, params=params,  model_type='lgb', plot_feature_importance=False)
+oof, prediction, score = train_model(train, test, label, params=params,  model_type='lgb', plot_feature_importance=False)
+
+sub_df = pd.DataFrame({"card_id":test.index})
+sub_df["target"] = prediction
+sub_df.to_csv("./output/submit_{0:.4f}.csv".format(score), index=False)
 

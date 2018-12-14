@@ -12,6 +12,8 @@ handler.setFormatter(format)
 logger.addHandler(handler)
 
 def is_mini_args(item):
+    if isinstance(item, (str,int,float)):
+        return True
     if '__len__' in dir(item) and len(item) >=20:
         return False
     elif (type(item) in (tuple, list, dict) and len(item) <= 20) :

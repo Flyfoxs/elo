@@ -132,8 +132,8 @@ def get_summary_card_his_new():
 
 
 def get_month_trend_his_new():
-    his = _aggregate_per_month(trans_his_file,'his')
-    new = _aggregate_per_month(trans_new_file, 'new')
+    his = _aggregate_per_month(trans_his_file,'his_mth_')
+    new = _aggregate_per_month(trans_new_file, 'new_mth_')
     return pd.concat([his,new], axis=1)
 
 @timed()
@@ -182,6 +182,7 @@ def get_summary_feature_agg():
     return additional_fields
 
 
+@file_cache()
 @reduce_mem()
 def get_feature_target():
     train = get_train_test(train_file)

@@ -16,8 +16,10 @@ def reduce_mem():
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
             val = fn(*args, **kwargs)
-            if isinstance(val, pd.DataFrame):
+            if isinstance(val, (pd.DataFrame,)) :
                 val = _reduce_mem_usage(val, verbose=True)
+            if isinstance(val, tuple) and all([ isinstance(df, (pd.DataFrame, pd.Series )) for df in val]):
+                val = tuple([  _reduce_mem_usage(df, verbose=True)  for df in val])
             else:
                 logger.warning(f'The return type for fun#{fn.__name__} is:{type(val)}')
             return val
