@@ -13,12 +13,13 @@ https://www.kaggle.com/artgor/elo-eda-and-models
 
 def reduce_mem():
     def decorator(fn):
-        #@timed()
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
             val = fn(*args, **kwargs)
-            val = _reduce_mem_usage(val, verbose=True)
-            logger.debug(val.shape)
+            if isinstance(val, pd.DataFrame):
+                val = _reduce_mem_usage(val, verbose=True)
+            else:
+                logger.warning(f'The return type for fun#{fn.__name__} is:{type(val)}')
             return val
         return wrapper
     return decorator
