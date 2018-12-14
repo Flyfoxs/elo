@@ -3,7 +3,7 @@ from code_felix.core.sk_model import *
 
 from hyperopt import fmin, tpe, hp,space_eval,rand,Trials,partial,STATUS_OK
 
-@timed()
+#@timed()
 def optimize_fun(args):
     args_input = locals()
     max_deep = args['max_depth']
@@ -27,7 +27,7 @@ def optimize_fun(args):
              "verbosity": -1,
              "verbose":-1, #No further splits with positive gain
              }
-    train, label, test = get_feature_target()
+    train, label, test = get_feature_target('201814')
     logger.debug(f'{train.shape}, {label.shape}, {test.shape}')
 
     model_type = 'lgb'
@@ -55,10 +55,10 @@ if __name__ == '__main__':
     else:
         max_evals = 2
 
-    space = {"max_depth":      hp.choice("max_depth", range(4,10)),
-             'reg_alpha':  hp.choice("reg_alpha", np.arange(0.1, 2, 0.1)),
+    space = {"max_depth":      hp.choice("max_depth", range(8,12)),
+             'reg_alpha':  hp.choice("reg_alpha",  np.arange(0.1, 2, 0.1).round(2)),
              'reg_lambda': hp.choice("reg_lambda", np.arange(0, 10, 1)),
-             'feature_fraction': hp.choice("feature_fraction", np.arange(0.1, 1, 0.1)),
+             'feature_fraction': hp.choice("feature_fraction", np.arange(0.1, 1, 0.1).round(2)),
              #"num_round": hp.choice("n_estimators", range(30, 100, 20)),  # [0,1,2,3,4,5] -> [50,]
              #"threshold": hp.choice("threshold", range(300, 500, 50))
              #"threshold": hp.randint("threshold", 400),

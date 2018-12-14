@@ -2,23 +2,23 @@ from code_felix.feature.read_file import *
 from code_felix.core.sk_model import *
 
 
-params = {'num_leaves': 54,
-         'min_data_in_leaf': 79,
-         'objective': 'regression',
-         'max_depth': 7,
-         'learning_rate': 0.018545526395058548,
-         "boosting": "gbdt",
-         "feature_fraction": 0.8354507676881442,
-         "bagging_freq": 3,
-         "bagging_fraction": 0.8126672064208567,
-         "bagging_seed": 11,
-         "metric": 'rmse',
-         "lambda_l1": 0.1,
-         "verbosity": -1,
-         'min_child_weight': 5.343384366323818,
-         'reg_alpha': 1.1302650970728192,
-         'reg_lambda': 0.3603427518866501,
-         'subsample': 0.8767547959893627,}
+# params = {'num_leaves': 54,
+#          'min_data_in_leaf': 79,
+#          'objective': 'regression',
+#          'max_depth': 7,
+#          'learning_rate': 0.018545526395058548,
+#          "boosting": "gbdt",
+#          "feature_fraction": 0.8354507676881442,
+#          "bagging_freq": 3,
+#          "bagging_fraction": 0.8126672064208567,
+#          "bagging_seed": 11,
+#          "metric": 'rmse',
+#          "lambda_l1": 0.1,
+#          "verbosity": -1,
+#          'min_child_weight': 5.343384366323818,
+#          'reg_alpha': 1.1302650970728192,
+#          'reg_lambda': 0.3603427518866501,
+#          'subsample': 0.8767547959893627,}
 
 
 params = {'num_leaves': 111,
@@ -41,7 +41,8 @@ params = {'num_leaves': 111,
 
 
 if __name__ == '__main__':
-    train, label, test = get_feature_target()
+    version ='201814'
+    train, label, test = get_feature_target(version)
     logger.debug(f'{train.shape}, {label.shape}, {test.shape}')
 
     model_type = 'lgb'
@@ -51,7 +52,7 @@ if __name__ == '__main__':
 
     sub_df = pd.DataFrame({"card_id":test.index})
     sub_df["target"] = prediction
-    file = "./output/submit_{}.csv".format(des)
+    file = "./output/submit_{0}_{1}.csv".format(des, version)
     sub_df.to_csv(file, index=False)
     logger.debug(f'Sub file save to :{file}')
 
