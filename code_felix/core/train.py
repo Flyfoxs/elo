@@ -41,18 +41,23 @@ params = {'num_leaves': 111,
 
 
 if __name__ == '__main__':
-    version ='201814'
-    train, label, test = get_feature_target(version)
-    logger.debug(f'{train.shape}, {label.shape}, {test.shape}')
+    for version, drop in [ ('1215_Drop', True),('1215', False),]:
 
-    model_type = 'lgb'
-    oof, prediction, score = train_model(train, test, label, params=params,  model_type=model_type, plot_feature_importance=False)
+        train, label, test = get_feature_target(version,drop)
+        logger.debug(f'get_feature_target result:{train.shape}, {label.shape}, {test.shape}')
 
-    des = '{0:.4f}_{1}_{2}'.format( score, model_type, get_params_summary(params) )
+        model_type = 'lgb'
+        oof, prediction, score = train_model(train, test, label, params=params,  model_type=model_type, plot_feature_importance=False)
 
-    sub_df = pd.DataFrame({"card_id":test.index})
-    sub_df["target"] = prediction
-    file = "./output/submit_{0}_{1}.csv".format(des, version)
-    sub_df.to_csv(file, index=False)
-    logger.debug(f'Sub file save to :{file}')
+        des = '{0:.6f}_{1}_{2}({3})'.format( score, model_type, get_params_summary(params), train.shape[1] )
+
+        sub_df = pd.DataFrame({"card_id":test.index})
+        sub_df["target"] = prediction
+        file = "./output/submit_{0}_{1}.csv".format(des, version)
+        sub_df.to_csv(file, index=False)
+        logger.debug(f'Sub file save to :{file}')
+
+
+
+
 

@@ -108,10 +108,10 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
             plt.title('LGB Features (avg over folds)');
 
             return oof, prediction, feature_importance
-        return oof, prediction, round(np.mean(scores),5)
+        return oof, prediction, round(np.mean(scores),7)
 
     else:
-        return oof, prediction, round(np.mean(scores),5)
+        return oof, prediction, round(np.mean(scores),7)
 
 
 if __name__ == '__main__':

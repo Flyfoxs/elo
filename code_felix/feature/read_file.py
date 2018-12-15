@@ -103,7 +103,7 @@ def _summary_card_trans_col(df, agg_fun=None):
     for key, value in agg_fun.items():
         #logger.debug(f'{key}:{df[key].dtype}')
         if key not in df:
-            logger.debug(f"Can not find column:{key} in df:{file}")
+            logger.exception(f"Can not find column:{key} in df")
 
     gp = df.groupby('card_id').agg(agg_fun)
 
@@ -129,9 +129,11 @@ def get_summary_card_his_new():
     new = _summary_card_trans_col(new_df, None)
     new.columns = [f'new_{"_".join(col)}' for col in new.columns]
 
-    ratio = cal_ratio(history, new, 'his_new')
+    ratio_new = cal_ratio(history, new, 'his_new')
 
-    df = pd.concat([auth, new, ratio,],  axis=1)
+    #ratio_auth = cal_ratio(history, auth, 'his_auth')
+
+    df = pd.concat([auth, new, ratio_new],  axis=1)
 
     for col in [col for col in df.columns if df[col].dtype.name == 'datetime64[ns]']:
         df[col] = pd.DatetimeIndex(df[col]).astype(np.int64) * 1e-9
@@ -225,8 +227,12 @@ def _gete_summary_feature_agg(trans, prefix):
 @lru_cache()
 @file_cache()
 @reduce_mem()
-def get_feature_target(version='default'):
-    train = get_train_test(train_file)
+def get_feature_target(version='default', drop=False):
+    original_train = get_train_test(train_file)
+    if drop:
+        train = original_train[original_train.target > -20]
+    else:
+        train = original_train
 
     target = train.loc[:,'target']
 
@@ -245,7 +251,7 @@ def get_feature_target(version='default'):
     feature = pd.concat([feature, his_auth_new, summary_feature, month_trend], axis=1)
 
     feature.fillna(0, inplace=True)
-    return feature.loc[target.index], target, feature.loc[ ~ (feature.index.isin( target.index))]
+    return feature.loc[target.index], target, feature.loc[test.index]
 
 
 

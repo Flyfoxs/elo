@@ -48,8 +48,10 @@ def timed(logger=logger, level=None, format='%s: %s ms', paras=True):
                 logger.info(f"Begin to run {fn.__name__} with {arg_count} paras")
             result = fn(*args, **kwargs)
             duration = time.time() - start
-            logging.info('cost:%7.2f sec: ===%r(%s paras), end (%r, %r) '
-                         % (duration, fn.__name__, arg_count, args_mini, kwargs_mini, ))
+            logging.info('cost:%7.2f sec: ===%r(%s paras), return:%s, end (%r, %r) '
+                         % (duration, fn.__name__, arg_count,
+                            result if isinstance(result, (str, int, float)) else type(result).__name__,
+                            args_mini, kwargs_mini, ))
             #logger.log(level, format, repr(fn), duration * 1000)
             return result
         return inner
