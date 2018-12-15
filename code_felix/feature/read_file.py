@@ -56,7 +56,34 @@ def get_train_test(file):
 
 
 @timed()
-def _summary_card_trans_col(df, agg_fun):
+def _summary_card_trans_col(df, agg_fun=None):
+
+    if agg_fun is None:
+        agg_fun = {
+            'authorized_flag': ['sum', 'mean'],
+            'category_1': ['sum', 'mean'],
+            'category_2_1.0': ['mean'],
+            'category_2_2.0': ['mean'],
+            'category_2_3.0': ['mean'],
+            'category_2_4.0': ['mean'],
+            'category_2_5.0': ['mean'],
+            'category_3_A': ['mean'],
+            'category_3_B': ['mean'],
+            'category_3_C': ['mean'],
+            'city_id': ['nunique'],
+            'installments': ['sum', 'mean', 'max', 'min', 'std'],
+            'merchant_category_id': ['nunique'],
+            'merchant_id': ['nunique'],
+            'month_diff': ['mean'],
+            'month_lag': ['mean', 'max', 'min', 'std'],
+            'purchase_amount': ['sum', 'mean', 'max', 'min', 'std'],
+            'purchase_date': [np.ptp, 'min', 'max'],
+            'purchase_month': ['mean', 'max', 'min', 'std'],
+            'state_id': ['nunique'],
+            'subsector_id': ['nunique'],
+            'card_id':['count'],
+        }
+
 
 
     df['authorized_flag'] = df['authorized_flag'].apply(lambda x: 1 if x == 'Y' else 0)
@@ -79,48 +106,32 @@ def _summary_card_trans_col(df, agg_fun):
             logger.debug(f"Can not find column:{key} in df:{file}")
 
     gp = df.groupby('card_id').agg(agg_fun)
+
+
+    for col in [col for col in gp.columns if gp[col].dtype.name == 'timedelta64[ns]']:
+        #logger.debug(f'Convert column#{col}')
+        gp[col] = gp[col].dt.days
+
     return gp
 
 
 def get_summary_card_his_new():
-    agg_fun = {
-        'authorized_flag': ['sum', 'mean'],
-        'category_1': ['sum', 'mean'],
-        'category_2_1.0': ['mean'],
-        'category_2_2.0': ['mean'],
-        'category_2_3.0': ['mean'],
-        'category_2_4.0': ['mean'],
-        'category_2_5.0': ['mean'],
-        'category_3_A': ['mean'],
-        'category_3_B': ['mean'],
-        'category_3_C': ['mean'],
-        'city_id': ['nunique'],
-        'installments': ['sum', 'mean', 'max', 'min', 'std'],
-        'merchant_category_id': ['nunique'],
-        'merchant_id': ['nunique'],
-        'month_diff': ['mean'],
-        'month_lag': ['mean', 'max', 'min', 'std'],
-        'purchase_amount': ['sum', 'mean', 'max', 'min', 'std'],
-        'purchase_date': [np.ptp, 'min', 'max'],
-        'purchase_month': ['mean', 'max', 'min', 'std'],
-        'state_id': ['nunique'],
-        'subsector_id': ['nunique'],
-        'card_id':['count'],
-    }
 
     his_df = _get_transaction(trans_his_file)
-    history = _summary_card_trans_col(his_df, agg_fun)
+    history = _summary_card_trans_col(his_df, None)
     history.columns = [f'his_{"_".join(col)}' for col in history.columns]
 
     auth_df = his_df[his_df.authorized_flag==1]
-    auth = _summary_card_trans_col(auth_df, agg_fun)
+    auth = _summary_card_trans_col(auth_df, None)
     auth.columns = [f'auth_{"_".join(col)}' for col in auth.columns]
 
-    new_df = _get_transaction(trans_his_file)
-    new = _summary_card_trans_col(new_df, agg_fun)
+    new_df = _get_transaction(trans_new_file)
+    new = _summary_card_trans_col(new_df, None)
     new.columns = [f'new_{"_".join(col)}' for col in new.columns]
 
-    df = pd.concat([history, auth, new], axis=1)
+    ratio = cal_ratio(history, new, 'his_new')
+
+    df = pd.concat([auth, new, ratio,],  axis=1)
 
     for col in [col for col in df.columns if df[col].dtype.name == 'datetime64[ns]']:
         df[col] = pd.DatetimeIndex(df[col]).astype(np.int64) * 1e-9
@@ -129,6 +140,23 @@ def get_summary_card_his_new():
         df[col] = df[col].dt.days
 
     return df
+
+def cal_ratio(df_base, df2, prefix):
+    col_list = df_base.select_dtypes(exclude='datetime64').columns
+    base = df_base[col_list].values
+
+    new_2 = df_base.copy()
+
+    new_2.iloc[:, :] = np.zeros_like(new_2)
+
+    new_2.loc[df2.index] = df2.values
+
+    new_2.sort_values('his_city_id_nunique')
+    new_2.dtypes
+
+    new = new_2[col_list].values
+    ratio = np.divide(new, base)
+    return pd.DataFrame(ratio, index=df_base.index, columns= [f'{prefix}_{col}'  for col in  col_list])
 
 
 def get_month_trend_his_new():
@@ -170,7 +198,17 @@ def _successive_aggregates(file, field1, field2):
     return u
 
 def get_summary_feature_agg():
-    trans = _get_transaction(trans_new_file)
+    his_df = _get_transaction(trans_his_file)
+    his_feature  = _gete_summary_feature_agg(his_df, 'his_fea')
+
+    new_df = _get_transaction(trans_his_file)
+    new_feature = _gete_summary_feature_agg(new_df, 'new_fea')
+
+    return pd.concat([his_feature, new_feature], axis=1)
+
+
+def _gete_summary_feature_agg(trans, prefix):
+
     additional_fields = _successive_aggregates(trans, 'category_1', 'purchase_amount')
     additional_fields = additional_fields.merge(_successive_aggregates(trans, 'installments', 'purchase_amount'),
                                                 on='card_id', how='left')
@@ -179,12 +217,15 @@ def get_summary_feature_agg():
     additional_fields = additional_fields.merge(_successive_aggregates(trans, 'category_1', 'installments'),
                                                 on='card_id', how='left')
     additional_fields.set_index('card_id', inplace=True)
+
+    additional_fields.columns = [ f'{prefix}_{col}' for col in additional_fields.columns]
+
     return additional_fields
 
-
+@lru_cache()
 @file_cache()
 @reduce_mem()
-def get_feature_target():
+def get_feature_target(version='default'):
     train = get_train_test(train_file)
 
     target = train.loc[:,'target']
