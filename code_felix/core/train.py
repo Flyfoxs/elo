@@ -41,9 +41,9 @@ params = {'num_leaves': 111,
 
 
 if __name__ == '__main__':
-    for version, drop in [ ('1215_Drop', True),('1215', False),]:
+    for version in [ ('1215')]:
 
-        train, label, test = get_feature_target(version,drop)
+        train, label, test = get_feature_target(version)
         logger.debug(f'get_feature_target result:{train.shape}, {label.shape}, {test.shape}')
 
         model_type = 'lgb'
