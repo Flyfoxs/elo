@@ -27,7 +27,7 @@ def optimize_fun(args):
              "verbosity": -1,
              "verbose":-1, #No further splits with positive gain
              }
-    version = '201814'
+    version = '1215'
     train, label, test = get_feature_target(version)
     logger.debug(f'{train.shape}, {label.shape}, {test.shape}')
 
@@ -56,10 +56,10 @@ if __name__ == '__main__':
     else:
         max_evals = 2
 
-    space = {"max_depth":      hp.choice("max_depth", range(8,11)),
-             'reg_alpha':  hp.choice("reg_alpha",  np.arange(0.1, 2, 0.1).round(2)),
-             'reg_lambda': hp.choice("reg_lambda", np.arange(60, 200, 10)),
-             'feature_fraction': hp.choice("feature_fraction", np.arange(0.1, 1, 0.1).round(2)),
+    space = {"max_depth":      hp.choice("max_depth", [8,9]),
+             'reg_alpha':  hp.choice("reg_alpha",  np.arange(0.1, 4, 0.5).round(2)),
+             'reg_lambda': hp.choice("reg_lambda", np.arange(60, 300, 10)),
+             'feature_fraction': hp.choice("feature_fraction", np.arange(0.6, 0.8, 0.05).round(2)),
              #"num_round": hp.choice("n_estimators", range(30, 100, 20)),  # [0,1,2,3,4,5] -> [50,]
              #"threshold": hp.choice("threshold", range(300, 500, 50))
              #"threshold": hp.randint("threshold", 400),

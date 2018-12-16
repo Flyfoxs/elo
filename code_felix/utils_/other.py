@@ -8,6 +8,27 @@ def replace_invalid_filename_char(filename):
         filename = filename.replace(char, '')
     return filename
 
+
+def is_mini_args(item):
+    if isinstance(item, (str,int,float)):
+        return True
+    else:
+        return False
+
+def get_pretty_info(info):
+    if isinstance(info, (tuple, list) ):
+        info = [item if is_mini_args(item) else type(item).__name__ for item in info]
+    elif isinstance(info, (dict) ):
+        info = [f'{key}:{value}' if is_mini_args(value) else f'{key}:{type(value).__name__ }'  for key, value in info.items()]
+    elif is_mini_args(info):
+        info = (info,)
+    else:
+        info = (type(info).__name__, )
+    return ','.join(info)
+
+
+
+
 def get_all_file(path):
     import os
     logger.debug(f'Try to read file from"{path}')
@@ -123,3 +144,5 @@ def estimate_f1_score(prediction, label, verbose=True):
     result = sorted(result, key= lambda val: val[1], reverse=True)
     return result[0]
 
+if __name__ == '__main__' :
+    logger.debug(get_pretty_info({'feature_fraction': 0.7, 'max_depth': 8, 'reg_alpha': 0.8, 'reg_lambda': 90},))
