@@ -10,6 +10,7 @@ def optimize_fun(args):
     feature_fraction = args['feature_fraction']
     reg_alpha = args['reg_alpha']
     reg_lambda = args['reg_lambda']
+    list_type = args['list_type']
     params = {'num_leaves': 111,
              'min_data_in_leaf': 149,
              'objective':'regression',
@@ -27,8 +28,8 @@ def optimize_fun(args):
              "verbosity": -1,
              "verbose":-1, #No further splits with positive gain
              }
-    version = '1215'
-    train, label, test = get_feature_target(version)
+    version = '1217'
+    train, label, test = get_feature_target(version, list_type=list_type)
     logger.debug(f'{train.shape}, {label.shape}, {test.shape}')
 
     model_type = 'lgb'
@@ -56,10 +57,11 @@ if __name__ == '__main__':
     else:
         max_evals = 2
 
-    space = {"max_depth":      hp.choice("max_depth", [8,9]),
-             'reg_alpha':  hp.choice("reg_alpha",  np.arange(0.8, 1.2, 0.1).round(2)),
-             'reg_lambda': hp.choice("reg_lambda", [200, 250, 300, 350, 400]),
-             'feature_fraction': hp.choice("feature_fraction", np.arange(0.6, 0.8, 0.05).round(2)),
+    space = {"max_depth":      hp.choice("max_depth", [8]),
+             'reg_alpha':  hp.choice("reg_alpha",  [0.8]),
+             'reg_lambda': hp.choice("reg_lambda", [200, 250]),
+             'feature_fraction': hp.choice("feature_fraction", [0.65, 0.7, 0.75, 0.8]),
+             'list_type': hp.choice("list_type", [-1, 0, 1, 4,]),
              #"num_round": hp.choice("n_estimators", range(30, 100, 20)),  # [0,1,2,3,4,5] -> [50,]
              #"threshold": hp.choice("threshold", range(300, 500, 50))
              #"threshold": hp.randint("threshold", 400),

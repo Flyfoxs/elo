@@ -85,6 +85,9 @@ def file_cache(overwrite=False, type='h5', prefix=None):
             mini_kwargs  = get_mini_args(kwargs)
             logger.debug(f'fn:{f.__name__}, para:{str(mini_args)}, kw:{str(mini_kwargs)}')
             key = '_'.join([f.__name__, str(mini_args), str(mini_kwargs)])
+            key = key.replace('.','_')
+            key = key.replace('/', '_')
+            key = key.replace('__', '_')
 
             if not is_support_cache(*args, **kwargs):
                 logger.debug(f'Don not support cache for fn:{f.__name__}, para:{str(mini_args)}, kw:{str(kwargs)}')

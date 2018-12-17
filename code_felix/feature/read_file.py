@@ -21,6 +21,7 @@ test_file = './input/test.csv'
 
 @timed()
 @lru_cache()
+@file_cache()
 @reduce_mem()
 def _get_transaction(file):
 
