@@ -17,9 +17,9 @@ import seaborn as sns
 def get_params_summary(params):
     key_list = ['num_leaves', 'max_depth', 'lambda_l1']
 
-    params = [ f'{key}_{params[key]}'  for key in key_list if key in params]
+    params = [ f'{key}={params[key]}'  for key in key_list if key in params]
 
-    return '|'.join(params)
+    return '_'.join(params)
 
 
 

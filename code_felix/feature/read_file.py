@@ -26,6 +26,9 @@ def _get_transaction(file):
 
     trans =  pd.read_csv(file, parse_dates=['purchase_date'])
 
+    trans['authorized_flag'] = trans['authorized_flag'].apply(lambda x: 1 if x == 'Y' else 0)
+
+
     trans['month_diff'] = ((pd.to_datetime('today') - trans['purchase_date']).dt.days) // 30
     trans['month_diff'] += trans['month_lag']
 
@@ -57,7 +60,7 @@ def get_train_test(file):
 
 @timed()
 def _summary_card_trans_col(df, agg_fun=None):
-
+    #df = df.copy()
     if agg_fun is None:
         agg_fun = {
             'authorized_flag': ['sum', 'mean'],
@@ -86,7 +89,6 @@ def _summary_card_trans_col(df, agg_fun=None):
 
 
 
-    df['authorized_flag'] = df['authorized_flag'].apply(lambda x: 1 if x == 'Y' else 0)
 
     df['purchase_month']  = df['purchase_date'].dt.month
 
@@ -115,25 +117,45 @@ def _summary_card_trans_col(df, agg_fun=None):
     return gp
 
 
-def get_summary_card_his_new():
+def get_summary_card_his_new(list_type):
 
     his_df = _get_transaction(trans_his_file)
     history = _summary_card_trans_col(his_df, None)
-    history.columns = [f'his_{"_".join(col)}' for col in history.columns]
 
-    auth_df = his_df[his_df.authorized_flag==1]
+    auth_df = his_df[(his_df.authorized_flag==1)]
     auth = _summary_card_trans_col(auth_df, None)
-    auth.columns = [f'auth_{"_".join(col)}' for col in auth.columns]
 
     new_df = _get_transaction(trans_new_file)
     new = _summary_card_trans_col(new_df, None)
-    new.columns = [f'new_{"_".join(col)}' for col in new.columns]
 
     ratio_new = cal_ratio(history, new, 'his_new')
 
-    #ratio_auth = cal_ratio(history, auth, 'his_auth')
+    history.columns = [f'his_{"_".join(col)}' for col in history.columns]
+    auth.columns = [f'auth_{"_".join(col)}' for col in auth.columns]
+    new.columns = [f'new_{"_".join(col)}' for col in new.columns]
 
-    df = pd.concat([auth, new, ratio_new],  axis=1)
+
+    #ratio_auth = cal_ratio(history, auth, 'his_auth')
+    if list_type == 0:
+        df = pd.concat([history, auth, new, ratio_new], axis=1)
+    elif list_type == 1:
+        df = pd.concat([auth, new, ratio_new], axis=1)
+    elif list_type == 2:
+        df = pd.concat([history, new, ratio_new], axis=1)
+    elif list_type == 3:
+        df = pd.concat([history, auth,  ratio_new], axis=1)
+    elif list_type == 4:
+        df = pd.concat([history, auth, new],  axis=1)
+    elif list_type == 5:
+        df = pd.concat([ new, ratio_new],  axis=1)
+    elif list_type == 6:
+        df = pd.concat([history,  ratio_new],  axis=1)
+    elif list_type == 7:
+        df = pd.concat([history, auth, ],  axis=1)
+    elif list_type == 8:
+        df = pd.concat([ auth, new],  axis=1)
+    else:
+        df = pd.concat([history, auth, new, ratio_new], axis=1)
 
     for col in [col for col in df.columns if df[col].dtype.name == 'datetime64[ns]']:
         df[col] = pd.DatetimeIndex(df[col]).astype(np.int64) * 1e-9
@@ -143,22 +165,24 @@ def get_summary_card_his_new():
 
     return df
 
-def cal_ratio(df_base, df2, prefix):
+def cal_ratio(df_base, new, prefix):
     col_list = df_base.select_dtypes(exclude='datetime64').columns
-    base = df_base[col_list].values
+    col_list = [ col for col in col_list if col in new.columns]
+    df_base_2 = df_base[col_list]
 
-    new_2 = df_base.copy()
+    new_2 = df_base_2.copy()
 
-    new_2.iloc[:, :] = np.zeros_like(new_2)
+    new_2.iloc[:,:] = np.full_like(new_2, np.nan, dtype=np.float)
 
-    new_2.loc[df2.index] = df2.values
+    #Change the column for mergeing the data
+    new.columns = df_base.columns
 
-    new_2.sort_values('his_city_id_nunique')
-    new_2.dtypes
+    new_2 = new_2.combine_first(new[col_list])
 
-    new = new_2[col_list].values
-    ratio = np.divide(new, base)
-    return pd.DataFrame(ratio, index=df_base.index, columns= [f'{prefix}_{col}'  for col in  col_list])
+    ratio = np.divide(new_2, df_base_2)
+    col_list_join = [ '_'.join(col) if isinstance(col, tuple) else col for col in col_list]
+    ratio.columns = [f'{prefix}_{col}' for col in col_list_join]
+    return ratio.fillna(0)
 
 
 def get_month_trend_his_new():
@@ -227,7 +251,7 @@ def _gete_summary_feature_agg(trans, prefix):
 @lru_cache()
 @file_cache()
 @reduce_mem()
-def get_feature_target(version='default', drop=False):
+def get_feature_target(version='default', drop=False, list_type=None):
     original_train = get_train_test(train_file)
     if drop:
         train = original_train[original_train.target > -20]
@@ -242,7 +266,7 @@ def get_feature_target(version='default', drop=False):
 
     feature = pd.concat([train, test])
 
-    his_auth_new = get_summary_card_his_new()
+    his_auth_new = get_summary_card_his_new(list_type)
 
     summary_feature = get_summary_feature_agg()
 

@@ -57,8 +57,8 @@ if __name__ == '__main__':
         max_evals = 2
 
     space = {"max_depth":      hp.choice("max_depth", [8,9]),
-             'reg_alpha':  hp.choice("reg_alpha",  np.arange(0.1, 4, 0.5).round(2)),
-             'reg_lambda': hp.choice("reg_lambda", np.arange(60, 300, 10)),
+             'reg_alpha':  hp.choice("reg_alpha",  np.arange(0.8, 1.2, 0.1).round(2)),
+             'reg_lambda': hp.choice("reg_lambda", [200, 250, 300, 350, 400]),
              'feature_fraction': hp.choice("feature_fraction", np.arange(0.6, 0.8, 0.05).round(2)),
              #"num_round": hp.choice("n_estimators", range(30, 100, 20)),  # [0,1,2,3,4,5] -> [50,]
              #"threshold": hp.choice("threshold", range(300, 500, 50))

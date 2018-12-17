@@ -18,6 +18,7 @@ try:
 except Exception as e:
     logger.warning(e)
 
+pd.options.mode.use_inf_as_na = True
 
 @timed(logger)
 def convert_label_encode(sample, exclude=[]):

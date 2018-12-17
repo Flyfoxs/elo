@@ -22,7 +22,7 @@ from code_felix.utils_.other import *
 #          'subsample': 0.8767547959893627,}
 
 
-def gen_sub(args):
+def gen_sub(args, version=None,list_type=None):
 
     params = {'num_leaves': 111,
               'min_data_in_leaf': 149,
@@ -45,10 +45,10 @@ def gen_sub(args):
     params = dict(params, **args)
 
     logger.debug(f'Model params:{params}')
+    if version is None:
+        version = '1215'
 
-    version = '1215'
-
-    train, label, test = get_feature_target(version)
+    train, label, test = get_feature_target(version, list_type=list_type)
     logger.debug(f'get_feature_target result:{train.shape}, {label.shape}, {test.shape}')
 
     model_type = 'lgb'
@@ -61,7 +61,7 @@ def gen_sub(args):
     sub_df["target"] = prediction
     file = "./output/submit_{0}_{1}.csv".format(des, version)
     sub_df.to_csv(file, index=False)
-    logger.debug(f'Sub file save to :{file}, With input paras:{get_pretty_info(args)}')
+    logger.debug(f'Sub file save to :{file}, With model paras:{get_pretty_info(args)}, version:{version}, list_type:{list_type}')
 
 
 if __name__ == '__main__':
