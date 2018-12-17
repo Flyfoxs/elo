@@ -24,6 +24,16 @@ def is_mini_args(item):
         return True
 
 
+def get_mini_args(args):
+    logger.debug(type(args))
+    if isinstance(args,(list, tuple)):
+        return [item if is_mini_args(item) else type(item).__name__ for item in args]
+    elif isinstance(args, (dict)):
+        return [(k, v) if is_mini_args(v) else (k, type(v).__name__) for k, v in args.items()]
+    elif isinstance(args, (str, float, int)):
+        return args
+    else:
+        return type(args).__name__
 
 
 import functools

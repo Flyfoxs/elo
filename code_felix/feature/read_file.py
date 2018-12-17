@@ -59,7 +59,11 @@ def get_train_test(file):
 
 
 @timed()
+@file_cache()
 def _summary_card_trans_col(df, agg_fun=None):
+    if isinstance(df, str):
+       df =  _get_transaction(df)
+
     #df = df.copy()
     if agg_fun is None:
         agg_fun = {
@@ -119,14 +123,14 @@ def _summary_card_trans_col(df, agg_fun=None):
 
 def get_summary_card_his_new(list_type):
 
-    his_df = _get_transaction(trans_his_file)
-    history = _summary_card_trans_col(his_df, None)
 
+    history = _summary_card_trans_col(trans_his_file, None)
+
+    his_df = _get_transaction(trans_his_file)
     auth_df = his_df[(his_df.authorized_flag==1)]
     auth = _summary_card_trans_col(auth_df, None)
 
-    new_df = _get_transaction(trans_new_file)
-    new = _summary_card_trans_col(new_df, None)
+    new = _summary_card_trans_col(trans_new_file, None)
 
     ratio_new = cal_ratio(history, new, 'his_new')
 
@@ -134,6 +138,9 @@ def get_summary_card_his_new(list_type):
     auth.columns = [f'auth_{"_".join(col)}' for col in auth.columns]
     new.columns = [f'new_{"_".join(col)}' for col in new.columns]
 
+    from code_felix.feature.category import get_cat_ratio
+
+    ratio_cat_vs = get_cat_ratio()
 
     #ratio_auth = cal_ratio(history, auth, 'his_auth')
     if list_type == 0:
@@ -155,7 +162,8 @@ def get_summary_card_his_new(list_type):
     elif list_type == 8:
         df = pd.concat([ auth, new],  axis=1)
     else:
-        df = pd.concat([history, auth, new, ratio_new], axis=1)
+        df = pd.concat([auth, new, ratio_new,ratio_cat_vs], axis=1)
+       # df = pd.concat([history, auth, new, ratio_new, ratio_cat_vs], axis=1)
 
     for col in [col for col in df.columns if df[col].dtype.name == 'datetime64[ns]']:
         df[col] = pd.DatetimeIndex(df[col]).astype(np.int64) * 1e-9

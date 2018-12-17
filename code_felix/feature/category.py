@@ -1,4 +1,5 @@
 from code_felix.feature.read_file import _get_transaction, cal_ratio
+from code_felix.feature.read_file import *
 from code_felix.utils_.util_pandas import flat_columns
 from code_felix.utils_.util_log import logger
 
@@ -16,7 +17,8 @@ def get_cat_feature(file):
     return tmp
 
 
-def get_cat_ratio(base, new):
+@lru_cache()
+def get_cat_ratio(base=trans_his_file, new=trans_new_file):
     base = get_cat_feature(base)
     new = get_cat_feature(new)
 

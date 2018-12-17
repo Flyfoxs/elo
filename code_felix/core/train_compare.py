@@ -7,7 +7,7 @@ if __name__ == '__main__':
        {'feature_fraction': 0.75, 'max_depth': 8, 'reg_alpha': 0.8, 'reg_lambda': 200},
        {'feature_fraction': 0.65, 'max_depth': 8, 'reg_alpha': 0.8, 'reg_lambda': 200},
    ]:
-       for list_type in range(9):
+       for list_type in [ 4, -1, 1,]:
             gen_sub(args, version='compare', list_type=list_type)
 
 

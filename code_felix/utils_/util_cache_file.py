@@ -79,9 +79,17 @@ def file_cache(overwrite=False, type='h5', prefix=None):
         @timed()
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
+
+
             mini_args = get_mini_args(args)
-            logger.debug(f'fn:{f.__name__}, para:{str(mini_args)}, kw:{str(kwargs)}')
-            key = '_'.join([f.__name__, str(mini_args), str(kwargs)])
+            mini_kwargs  = get_mini_args(kwargs)
+            logger.debug(f'fn:{f.__name__}, para:{str(mini_args)}, kw:{str(mini_kwargs)}')
+            key = '_'.join([f.__name__, str(mini_args), str(mini_kwargs)])
+
+            if not is_support_cache(*args, **kwargs):
+                logger.debug(f'Don not support cache for fn:{f.__name__}, para:{str(mini_args)}, kw:{str(kwargs)}')
+                return f(*args, **kwargs)
+
             if prefix:
                 key  = '_'.join([prefix, key])
             if overwrite==False:
@@ -93,23 +101,21 @@ def file_cache(overwrite=False, type='h5', prefix=None):
         return wrapper
     return decorator
 
-def get_mini_args(args):
-    args_mini = [item.split('/')[-1] if isinstance(item, str) else item
-                    for item in args
-                        if (type(item) in (tuple, list, dict) and len(item) <= 5)
-                            or type(item) not in (tuple, list, dict, pd.DataFrame)
-                 ]
+def is_support_cache(*args, **kwargs):
+    from code_felix.utils_.other import is_mini_args
+    for arg in args:
+        if not is_mini_args(arg):
+            logger.debug(f'There is {type(arg).__name__} in the args')
+            return False
+    for _ , arg in kwargs.items():
+        if not is_mini_args(arg):
+            logger.debug(f'There is {type(arg).__name__} in the kwargs')
+            return False
+    return True
 
 
 
-    df_list  =  [item for item in args if isinstance( item, pd.DataFrame) ]
 
-    i=0
-    for df in df_list:
-        args_mini.append(f'df{i}_{len(df)}')
-        i += 1
-
-    return args_mini
 
 if __name__ == '__main__':
 
@@ -134,6 +140,8 @@ if __name__ == '__main__':
 
     print(test_cache('Felix'))
     print(test_cache_2('Felix'))
+    df = test_cache('Felix')
+    test_cache(df)
     #print(test_cache('Felix'))
 
 
