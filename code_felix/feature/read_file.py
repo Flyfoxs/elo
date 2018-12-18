@@ -19,7 +19,7 @@ test_file = './input/test.csv'
 
 
 
-@timed()
+
 @lru_cache()
 @file_cache()
 @reduce_mem()
@@ -99,7 +99,7 @@ def _summary_card_trans_col(df, agg_fun = None, filter_type = None):
 
 
 
-    df['purchase_month']  = df['purchase_date'].dt.month
+    df.loc[:,'purchase_month']  = df['purchase_date'].dt.month
 
     #logger.debug(f'category_1:{df.category_1.dtype.name}')
     if df.category_1.dtype.name == 'object':

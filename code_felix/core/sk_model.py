@@ -54,7 +54,7 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
 
             watchlist = [(train_data, 'train'), (valid_data, 'valid_data')]
             model = xgb.train(dtrain=train_data, num_boost_round=20000, evals=watchlist, early_stopping_rounds=200,
-                              verbose_eval=500, params=params)
+                              verbose_eval=50, params=params)
             y_pred_valid = model.predict(xgb.DMatrix(X_valid), ntree_limit=model.best_ntree_limit)
             y_pred = model.predict(xgb.DMatrix(X_test), ntree_limit=model.best_ntree_limit)
 

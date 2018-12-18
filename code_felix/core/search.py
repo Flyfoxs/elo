@@ -1,3 +1,5 @@
+from code_felix.core.train import *
+from code_felix.core.params import *
 from code_felix.feature.read_file import *
 from code_felix.core.sk_model import *
 from code_felix.utils_.other import get_pretty_info
@@ -5,46 +7,30 @@ from code_felix.utils_.other import get_pretty_info
 from hyperopt import fmin, tpe, hp,space_eval,rand,Trials,partial,STATUS_OK
 
 @timed()
-def optimize_fun(args):
+def optimize_fun(args, model_type):
     args_input = locals()
     max_deep = args['max_depth']
     feature_fraction = args['feature_fraction']
     reg_alpha = args['reg_alpha']
     reg_lambda = args['reg_lambda']
     list_type = args['list_type']
-    params = {'num_leaves': 111,
-             'min_data_in_leaf': 149,
-             'objective':'regression',
-             'max_depth': max_deep,
-             'learning_rate': 0.005,
-             "boosting": "gbdt",
-             "feature_fraction": feature_fraction,
-             "bagging_freq": 1,
-             "bagging_fraction": 0.7083 ,
-             "bagging_seed": 11,
-             "metric": 'rmse',
-             "reg_alpha": reg_alpha,
-             "reg_lambda": reg_lambda,
-             "random_state": 133,
-             "verbosity": -1,
-             "verbose":-1, #No further splits with positive gain
-             }
+
     version = '1217'
     train, label, test = get_feature_target(version, list_type=list_type)
     logger.debug(f'{train.shape}, {label.shape}, {test.shape}')
 
-    model_type = 'lgb'
-    oof, prediction, score = train_model(train, test, label, params=params, model_type=model_type,
+    model_paras = get_model_paras(model_type, args)
+    oof, prediction, score = train_model(train, test, label, params=model_paras, model_type=model_type,
                                          plot_feature_importance=False)
-    logger.debug('Search: get {0:,.7f} base on {1},feature:{2}'.format(score,args_input, train.shape[1]))
+    logger.debug('Search: get {0:,.7f} base on {1},{2},feature:{3}'.format(score, model_type, args_input, train.shape[1]))
 
-    if score >= 3.653:
-        des = '{0:.6f}_{1}_{2}({3})'.format(score, model_type, get_params_summary(params), train.shape[1])
+    if score <= 3.654:
+        des = '{0:.6f}_{1}_{2}({3})'.format(score, model_type, get_params_summary(model_paras), train.shape[1])
         sub_df = pd.DataFrame({"card_id": test.index})
         sub_df["target"] = prediction
         file = "./output/submit_{0}_{1}.csv".format(des, version)
         sub_df.to_csv(file, index=False)
-        logger.debug(f'Sub file save to :{file}, With model paras:{get_pretty_info(args)}, version:{version}, list_type:{list_type}')
+        logger.debug(f'Sub file save to :{file}, With model paras:{get_pretty_info(args)}, model:{model_type}, version:{version}, list_type:{list_type}')
 
     return {
         'loss': score,
@@ -62,24 +48,32 @@ if __name__ == '__main__':
     import sys
 
     if len(sys.argv) > 1:
-        max_evals = int(sys.argv[1])
+        model_type = sys.argv[1]
+        max_evals = int(sys.argv[2])
+
     else:
+        model_type = 'lgb'
         max_evals = 2
 
-    space = {"max_depth":      hp.choice("max_depth", [9]),
+    logger.debug(f'Try to search paras base on model:{model_type}, max_evals:{max_evals}')
+
+    from functools import partial
+    optimize_fun_ex = partial(optimize_fun, model_type=model_type)
+
+    space = {"max_depth":      hp.choice("max_depth", [7,8, 9]),
              'reg_alpha':  hp.choice("reg_alpha",  [0.8]),
-             'reg_lambda': hp.choice("reg_lambda", [ 250]),
-             'feature_fraction': hp.choice("feature_fraction", [0.65, 0.7, 0.75, 0.8]),
-             'list_type': hp.choice("list_type", range(-1, 9)),
+             'reg_lambda': hp.choice("reg_lambda", [225, 250, 300 ]),
+             'feature_fraction': hp.choice("feature_fraction", [0.7, 0.75, 0.8]),
+             'list_type': hp.choice("list_type", range(4, 9)),
              #"num_round": hp.choice("n_estimators", range(30, 100, 20)),  # [0,1,2,3,4,5] -> [50,]
              #"threshold": hp.choice("threshold", range(300, 500, 50))
              #"threshold": hp.randint("threshold", 400),
              }
 
     trials = Trials()
-    best = fmin(optimize_fun, space, algo=tpe.suggest, max_evals=max_evals, trials=trials)
+    best = fmin(optimize_fun_ex, space, algo=tpe.suggest, max_evals=max_evals, trials=trials)
 
-    logger.debug(f"Best: {best}")
+    #logger.debug(f"Best: {best}")
 
     att_message = [trials.trial_attachments(trial)['message'] for trial in trials.trials]
     for score, para, misc in zip( trials.losses() ,
