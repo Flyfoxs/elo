@@ -1,5 +1,7 @@
-from code_felix.utils_.other import get_gpu_paras
+from hyperopt import hp
 
+from code_felix.utils_.other import get_gpu_paras
+from code_felix.utils_.util_log import *
 
 
 def get_model_paras(model_type, ext_paras={}):
@@ -68,3 +70,26 @@ def _get_xgb_paras(input={}):
         gpu_ex = {}
 
     return dict(params, **input, **gpu_paras, **gpu_ex)
+
+
+def get_search_space(model_type):
+    if model_type == 'xgb':
+        space = {"max_depth": hp.choice("max_depth", [7, 8, 9]),
+                 'reg_alpha': hp.choice("reg_alpha", [0.8]),
+                 'reg_lambda': hp.choice("reg_lambda", [225, 250, 300]),
+                 'feature_fraction': hp.choice("feature_fraction", [0.7, 0.75, 0.8]),
+                 'list_type': hp.choice("list_type", range(-1, 9)),
+
+                 }
+    elif model_type =='lgb':
+        space = {"max_depth": hp.choice("max_depth", [8]),
+                 'reg_alpha': hp.choice("reg_alpha", [0.8]),
+                 'reg_lambda': hp.choice("reg_lambda", [190, 200, 210]),
+                 'feature_fraction': hp.choice("feature_fraction", [0.75, 0.8, 0.85]),
+                 'list_type': hp.choice("list_type", range(-1, 9)),
+                 }
+    else:
+        space = {}
+    logger.debug(f'The search space for {model_type} is {space}')
+
+    return space

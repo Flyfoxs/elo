@@ -60,17 +60,9 @@ if __name__ == '__main__':
     from functools import partial
     optimize_fun_ex = partial(optimize_fun, model_type=model_type)
 
-    space = {"max_depth":      hp.choice("max_depth", [7,8, 9]),
-             'reg_alpha':  hp.choice("reg_alpha",  [0.8]),
-             'reg_lambda': hp.choice("reg_lambda", [225, 250, 300 ]),
-             'feature_fraction': hp.choice("feature_fraction", [0.7, 0.75, 0.8]),
-             'list_type': hp.choice("list_type", range(4, 9)),
-             #"num_round": hp.choice("n_estimators", range(30, 100, 20)),  # [0,1,2,3,4,5] -> [50,]
-             #"threshold": hp.choice("threshold", range(300, 500, 50))
-             #"threshold": hp.randint("threshold", 400),
-             }
 
     trials = Trials()
+    space = get_search_space(model_type)
     best = fmin(optimize_fun_ex, space, algo=tpe.suggest, max_evals=max_evals, trials=trials)
 
     #logger.debug(f"Best: {best}")
