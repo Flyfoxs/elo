@@ -12,21 +12,32 @@ def replace_invalid_filename_char(filename):
 def is_mini_args(item):
     if isinstance(item, (str,int,float)):
         return True
-    else:
+    if '__len__' in dir(item) and len(item) >=20:
         return False
-
-def get_pretty_info(info):
-    if isinstance(info, (tuple, list) ):
-        info = [item if is_mini_args(item) else type(item).__name__ for item in info]
-    elif isinstance(info, (dict) ):
-        info = [f'{key}:{value}' if is_mini_args(value) else f'{key}:{type(value).__name__ }'  for key, value in info.items()]
-    elif is_mini_args(info):
-        info = (info,)
+    elif (type(item) in (tuple, list, dict) and len(item) <= 20) :
+        return True
+    elif type(item) in (tuple, list, dict, pd.DataFrame, pd.SparseDataFrame):
+        return False
+    elif item is None:
+        return False
     else:
-        info = (type(info).__name__, )
-    return ','.join(info)
+        return True
 
-
+def get_pretty_info(args):
+    if isinstance(args,(list, tuple)) and len(args)>0:
+        mini =  [item if is_mini_args(item) else type(item).__name__ for item in args]
+        return ','.join(mini)
+    elif isinstance(args, (dict)) and len(args)>0:
+        mini = [f'{k}={v}' if is_mini_args(v) else f'{k}={type(v).__name__}' for k, v in args.items()]
+        return ','.join(mini)
+    elif '__len__' in dir(args) and len(args)==0:
+        return ''
+    elif isinstance(args, (str, float, int)):
+        return args
+    elif args is None:
+        return 'None'
+    else:
+        return type(args).__name__
 
 
 def get_all_file(path):

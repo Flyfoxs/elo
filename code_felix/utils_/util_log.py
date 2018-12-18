@@ -12,31 +12,13 @@ handler.setFormatter(format)
 logger.addHandler(handler)
 
 def is_mini_args(item):
-    if isinstance(item, (str,int,float)):
-        return True
-    if '__len__' in dir(item) and len(item) >=20:
-        return False
-    elif (type(item) in (tuple, list, dict) and len(item) <= 20) :
-        return True
-    elif type(item) in (tuple, list, dict, pd.DataFrame, pd.SparseDataFrame):
-        return False
-    elif item is None:
-        return False
-    else:
-        return True
+    from code_felix.utils_.other import is_mini_args
+    return is_mini_args(item)
 
 
 def get_mini_args(args):
-    if isinstance(args,(list, tuple)) and len(args)>0:
-        mini =  [item if is_mini_args(item) else type(item).__name__ for item in args]
-        return ','.join(mini)
-    elif isinstance(args, (dict)) and len(args)>0:
-        mini = [f'{k}={v}' if is_mini_args(v) else f'{k}={type(v).__name__}' for k, v in args.items()]
-        return ','.join(mini)
-    elif isinstance(args, (str, float, int)):
-        return args
-    else:
-        return type(args).__name__
+    from code_felix.utils_.other import get_pretty_info
+    return get_pretty_info(args)
 
 
 import functools
@@ -61,7 +43,7 @@ def timed(logger=logger, level=None, format='%s: %s ms', paras=True):
                 logger.info(f"Begin to run {fn.__name__} with {arg_count} paras")
             result = fn(*args, **kwargs)
             duration = time.time() - start
-            logging.info('cost:%7.2f sec: ===%r(%s paras), return:%s, end (%r, %r) '
+            logging.info('cost:%7.2f sec: ===%r(%s paras)(%r, %r), return:%s, end '
                          % (duration, fn.__name__, arg_count,
                             result if isinstance(result, (str, int, float)) else type(result).__name__,
                             args_mini, kwargs_mini, ))

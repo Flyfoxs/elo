@@ -59,11 +59,15 @@ def get_train_test(file):
     return df
 
 
-@timed()
+
 @file_cache()
-def _summary_card_trans_col(df, agg_fun=None):
+def _summary_card_trans_col(df, agg_fun = None, filter_type = None):
     if isinstance(df, str):
        df =  _get_transaction(df)
+
+    if filter_type == 'auth':
+        df = df[(df.authorized_flag == 1)]
+
 
     #df = df.copy()
     if agg_fun is None:
@@ -127,9 +131,7 @@ def get_summary_card_his_new(list_type):
 
     history = _summary_card_trans_col(trans_his_file, None)
 
-    his_df = _get_transaction(trans_his_file)
-    auth_df = his_df[(his_df.authorized_flag==1)]
-    auth = _summary_card_trans_col(auth_df, None)
+    auth = _summary_card_trans_col(trans_his_file, None, 'auth')
 
     new = _summary_card_trans_col(trans_new_file, None)
 
