@@ -74,19 +74,19 @@ def _get_xgb_paras(input={}):
 
 def get_search_space(model_type):
     if model_type == 'xgb':
-        space = {"max_depth": hp.choice("max_depth", [7, 8, 9]),
-                 'reg_alpha': hp.choice("reg_alpha", [0.8]),
-                 'reg_lambda': hp.choice("reg_lambda", [225, 250, 300]),
+        space = {"max_depth": hp.choice("max_depth", [6,7,8]),
+                 'reg_alpha': hp.choice("reg_alpha", [0.7, 0.8, ]),
+                 'reg_lambda': hp.choice("reg_lambda", [250, 300, 350]),
                  'feature_fraction': hp.choice("feature_fraction", [0.7, 0.75, 0.8]),
-                 'list_type': hp.choice("list_type", range(-1, 9)),
-
+                 'list_type': hp.choice("list_type", range(0, 10)),
                  }
+
     elif model_type =='lgb':
-        space = {"max_depth": hp.choice("max_depth", [8]),
+        space = {"max_depth": hp.choice("max_depth", [7,8]),
                  'reg_alpha': hp.choice("reg_alpha", [0.8]),
                  'reg_lambda': hp.choice("reg_lambda", [190, 200, 210]),
                  'feature_fraction': hp.choice("feature_fraction", [0.75, 0.8, 0.85]),
-                 'list_type': hp.choice("list_type", range(-1, 9)),
+                 'list_type': hp.choice("list_type", range(0, 10)),
                  }
     else:
         space = {}

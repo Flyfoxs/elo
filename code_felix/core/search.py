@@ -15,7 +15,7 @@ def optimize_fun(args, model_type):
     reg_lambda = args['reg_lambda']
     list_type = args['list_type']
 
-    version = '1217'
+    version = '1219'
     train, label, test = get_feature_target(version, list_type=list_type)
     logger.debug(f'{train.shape}, {label.shape}, {test.shape}')
 
@@ -24,7 +24,7 @@ def optimize_fun(args, model_type):
                                          plot_feature_importance=False)
     logger.debug('Search: get {0:,.7f} base on {1},{2},feature:{3}'.format(score, model_type, args_input, train.shape[1]))
 
-    if score <= 3.654:
+    if score <= 3.653:
         des = '{0:.6f}_{1}_{2}({3})'.format(score, model_type, get_params_summary(model_paras), train.shape[1])
         sub_df = pd.DataFrame({"card_id": test.index})
         sub_df["target"] = prediction

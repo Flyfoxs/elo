@@ -149,23 +149,26 @@ def get_summary_card_his_new(list_type):
     if list_type == 0:
         df = pd.concat([history, auth, new, ratio_new], axis=1)
     elif list_type == 1:
-        df = pd.concat([auth, new, ratio_new], axis=1)
+        df = pd.concat([history, auth, new], axis=1)
     elif list_type == 2:
         df = pd.concat([history, new, ratio_new], axis=1)
     elif list_type == 3:
-        df = pd.concat([history, auth,  ratio_new], axis=1)
+        df = pd.concat([auth, new, ratio_new], axis=1)
     elif list_type == 4:
-        df = pd.concat([history, auth, new],  axis=1)
+        df = pd.concat([history, auth,  ratio_new], axis=1)
+
+
     elif list_type == 5:
-        df = pd.concat([ new, ratio_new],  axis=1)
+        df = pd.concat([history, auth, new,ratio_cat_vs], axis=1)
     elif list_type == 6:
-        df = pd.concat([history,  ratio_new],  axis=1)
+        df = pd.concat([history, new, ratio_new,ratio_cat_vs], axis=1)
     elif list_type == 7:
-        df = pd.concat([history, auth, ],  axis=1)
-    elif list_type == 8:
-        df = pd.concat([ auth, new],  axis=1)
-    else:
         df = pd.concat([auth, new, ratio_new,ratio_cat_vs], axis=1)
+    elif list_type == 8:
+        df = pd.concat([history, auth, ratio_new,ratio_cat_vs], axis=1)
+
+    else:
+        df = pd.concat([history, auth, new, ratio_new,ratio_cat_vs], axis=1)
        # df = pd.concat([history, auth, new, ratio_new, ratio_cat_vs], axis=1)
 
     for col in [col for col in df.columns if df[col].dtype.name == 'datetime64[ns]']:
