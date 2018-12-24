@@ -13,6 +13,9 @@ import xgboost as xgb
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from code_felix.utils_.util_pandas import save_result_for_ensemble
+from code_felix.core.dnn_model import *
+
 
 def get_params_summary(params):
     key_list = ['num_leaves', 'max_depth', 'lambda_l1']
@@ -24,7 +27,7 @@ def get_params_summary(params):
 
 
 @timed()
-def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_importance=False):
+def train_model(X, X_test, y, params,  model_type='lgb', plot_feature_importance=False):
 
     oof = np.zeros(len(X))
     prediction = np.zeros(len(X_test))
@@ -74,12 +77,39 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
             y_pred_valid = model.predict(X_valid)
             y_pred = model.predict(X_test)
 
+        if model_type.startswith('dnn'):
+
+            from multiprocessing import Process, Queue
+
+            @timed()
+            def fn( X_train, y_train, X_valid, y_valid, queue):
+                model = ELO_model(X_train.shape[1], model_type=model_type)
+                model.fit(X_train, y_train, X_valid, y_valid)
+
+                y_pred_valid = model.predict(X_valid)
+                y_pred = model.predict(X_test)
+
+                queue.put((y_pred_valid, y_pred))
+
+            queue = Queue()
+
+            p = Process(target=fn, args=(X_train, y_train, X_valid, y_valid, queue))
+            p.start()
+            p.join()
+            y_pred_valid, y_pred = queue.get()
+
+
+            logger.debug(f'y_pred_valid:{y_pred_valid.shape}, y_pred:{y_pred.shape}')
+
+            #logger.debug(f'result len, ID:{id(result)}')
+
         oof[valid_index] = y_pred_valid.reshape(-1, )
         score = mean_squared_error(y_valid, y_pred_valid) ** 0.5
         scores.append(score)
 
         logger.debug('Folder:{}, score:{}'.format(fold_n, score) )
 
+        logger.debug(f'prediction:{prediction.shape}, y_pred:{y_pred.shape}')
         prediction += y_pred
 
         if model_type == 'lgb':
@@ -94,6 +124,13 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
 
     logger.debug('CV mean score: {0:.4f}, std: {1:.4f}. score list:{2}'.format(np.mean(scores), np.std(scores), scores))
 
+    score_avg = round(np.mean(scores), 7)
+    oof = pd.DataFrame(oof, columns=['train'], index=X.index)
+    y = pd.DataFrame(y.values, columns=['y'], index=X.index)
+    prediction = pd.DataFrame(prediction, columns=['prediction'], index=X_test.index)
+
+    if score_avg <= 3.63:
+        save_result_for_ensemble(model_type, file_name=f'{model_type}_{score_avg}', train=oof, label=y, prediction=prediction)
 
     if model_type == 'lgb':
         feature_importance["importance"] /= n_fold
@@ -108,10 +145,9 @@ def train_model(X, X_test, y, params=None,  model_type='lgb', plot_feature_impor
             plt.title('LGB Features (avg over folds)');
 
             return oof, prediction, feature_importance
-        return oof, prediction, round(np.mean(scores),7)
 
-    else:
-        return oof, prediction, round(np.mean(scores),7)
+    return oof, prediction, score_avg
+
 
 
 if __name__ == '__main__':

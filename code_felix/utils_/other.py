@@ -47,28 +47,28 @@ def get_all_file(path):
     file_list = [file for file in file_list if '.h5' in file]
     return file_list
 
-def save_result_for_ensemble(name, label_name,  **kwargs,):
-    """"
-    name = '{score}_name'
-    """
-    import os
-    folder = f'./output/1level/{label_name}'
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
-    file = f'./output/1level/{label_name}/baseline_{name}.h5'
-    file = replace_invalid_filename_char(file)
-    store = pd.HDFStore(file)
-
-    if kwargs is not None:
-        for key, value in kwargs.items():
-            if key is not None:
-                store[f'{key}'] = value
-                logger.debug(f'Stove {key} to file#{file}  , size:{value.shape}')
-
-    store.close()
-    logger.debug(f"Ensamble file save to file: {file}")
-    return file
+# def save_result_for_ensemble(name, label_name,  **kwargs,):
+#     """"
+#     name = '{score}_name'
+#     """
+#     import os
+#     folder = f'./output/1level/{label_name}'
+#     if not os.path.exists(folder):
+#         os.makedirs(folder)
+#
+#     file = f'./output/1level/{label_name}/baseline_{name}.h5'
+#     file = replace_invalid_filename_char(file)
+#     store = pd.HDFStore(file)
+#
+#     if kwargs is not None:
+#         for key, value in kwargs.items():
+#             if key is not None:
+#                 store[f'{key}'] = value
+#                 logger.debug(f'Stove {key} to file#{file}  , size:{value.shape}')
+#
+#     store.close()
+#     logger.debug(f"Ensamble file save to file: {file}")
+#     return file
 
 
 def print_imp_list( train, clf, order_by_wight=True, show_zero=True):

@@ -1,14 +1,20 @@
-from hyperopt import hp
 
 from code_felix.utils_.other import get_gpu_paras
 from code_felix.utils_.util_log import *
 
+
+try:
+    from hyperopt import hp
+except Exception as e:
+    logger.exception(e)
 
 def get_model_paras(model_type, ext_paras={}):
     if model_type == 'xgb':
         return _get_xgb_paras(ext_paras)
     elif model_type == 'lgb':
         return _get_lgb_paras(ext_paras)
+    elif model_type.startswith( 'dnn'):
+        return model_type
     else:
         raise Exception(f'Unknown model:{model_type}')
 
@@ -74,11 +80,11 @@ def _get_xgb_paras(input={}):
 
 def get_search_space(model_type):
     if model_type == 'xgb':
-        space = {"max_depth": hp.choice("max_depth", [6,7,8]),
-                 'reg_alpha': hp.choice("reg_alpha", [0.7, 0.8, ]),
-                 'reg_lambda': hp.choice("reg_lambda", [250, 300, 350]),
-                 'feature_fraction': hp.choice("feature_fraction", [0.7, 0.75, 0.8]),
-                 'list_type': hp.choice("list_type", range(0, 10)),
+        space = {"max_depth": hp.choice("max_depth", [5, 6, 7]),
+                 'reg_alpha': hp.choice("reg_alpha", [0.6, 0.7, 0.8 ]),
+                 'reg_lambda': hp.choice("reg_lambda", [200, 250, 300, 350]),
+                 'feature_fraction': hp.choice("feature_fraction", [0.4, 0.45,0.6, 0.7]),
+                 'list_type': hp.choice("list_type", [0,9, 1,2]),
                  }
 
     elif model_type =='lgb':

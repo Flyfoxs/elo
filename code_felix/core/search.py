@@ -27,7 +27,7 @@ def optimize_fun(args, model_type):
     if score <= 3.653:
         des = '{0:.6f}_{1}_{2}({3})'.format(score, model_type, get_params_summary(model_paras), train.shape[1])
         sub_df = pd.DataFrame({"card_id": test.index})
-        sub_df["target"] = prediction
+        sub_df["target"] = prediction.iloc[:,0]
         file = "./output/submit_{0}_{1}.csv".format(des, version)
         sub_df.to_csv(file, index=False)
         logger.debug(f'Sub file save to :{file}, With model paras:{get_pretty_info(args)}, model:{model_type}, version:{version}, list_type:{list_type}')
